@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any
 
 
 @dataclass
@@ -15,7 +15,7 @@ class DrillMetrics:
     restore_duration_seconds: float
     verification_success: bool
     data_loss_detected: bool
-    metadata: dict
+    metadata: dict[str, Any]
 
 
 def calculate_rto(failure_time: datetime, recovery_time: datetime) -> timedelta:

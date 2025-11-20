@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Any
 
 
 class EventType(str, Enum):
@@ -26,7 +26,7 @@ class TimelineEvent:
     timestamp: datetime
     event_type: EventType
     description: str
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -36,8 +36,8 @@ class VerificationResult:
     data_integrity_ok: bool
     service_restored: bool
     checksums_matched: bool
-    issues: List[str] = field(default_factory=list)
-    metadata: dict = field(default_factory=dict)
+    issues: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,13 +51,13 @@ class DrillReport:
     rpo_seconds: float
     target_rto_seconds: float
     target_rpo_seconds: float
-    timeline: List[TimelineEvent]
+    timeline: list[TimelineEvent]
     verification: VerificationResult
     success: bool
-    metadata: dict = field(default_factory=dict)
-    ai_summary: Optional[str] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    ai_summary: str | None = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary.
 
         Returns:

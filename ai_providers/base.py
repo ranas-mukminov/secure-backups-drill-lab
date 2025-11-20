@@ -1,7 +1,6 @@
 """Abstract AI provider interface."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class AIProvider(ABC):
@@ -13,7 +12,7 @@ class AIProvider(ABC):
         prompt: str,
         max_tokens: int = 1000,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> str:
         """Generate text from a prompt.
 

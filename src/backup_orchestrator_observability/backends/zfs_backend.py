@@ -4,7 +4,7 @@ import logging
 import subprocess
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backup_orchestrator_observability.backends.base import (
     BackupBackend,
@@ -21,8 +21,8 @@ class ZFSBackend(BackupBackend):
     """ZFS send/receive wrapper for backup operations."""
 
     def _run_zfs(
-        self, args: List[str], capture_output: bool = True
-    ) -> subprocess.CompletedProcess:
+        self, args: list[str], capture_output: bool = True
+    ) -> subprocess.CompletedProcess[str]:
         """Run zfs command.
 
         Args:
@@ -49,7 +49,7 @@ class ZFSBackend(BackupBackend):
 
     def backup(
         self,
-        sources: List[str],
+        sources: list[str],
         repository: str,
         **options: Any,
     ) -> BackupResult:
@@ -91,7 +91,7 @@ class ZFSBackend(BackupBackend):
             if incremental_base:
                 # Incremental send
                 send_args.extend(["-i", f"{dataset}@{incremental_base}"])
-            
+
             send_args.append(snapshot)
 
             # Determine target
@@ -100,7 +100,7 @@ class ZFSBackend(BackupBackend):
                 send_args.extend([">", repository])
                 # Use shell for redirection
                 send_cmd = f"zfs {' '.join(send_args)}"
-                result = subprocess.run(
+                subprocess.run(
                     send_cmd,
                     shell=True,
                     capture_output=True,
@@ -111,13 +111,13 @@ class ZFSBackend(BackupBackend):
                 # Send to remote dataset (via SSH or direct)
                 # For now, we'll assume direct local receive
                 recv_cmd = ["zfs", "receive", "-F", repository]
-                
+
                 send_proc = subprocess.Popen(
                     ["zfs"] + send_args,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
-                
+
                 recv_proc = subprocess.Popen(
                     recv_cmd,
                     stdin=send_proc.stdout,
@@ -125,10 +125,11 @@ class ZFSBackend(BackupBackend):
                     stderr=subprocess.PIPE,
                     text=True,
                 )
-                
-                send_proc.stdout.close()
+
+                if send_proc.stdout is not None:
+                    send_proc.stdout.close()
                 recv_stdout, recv_stderr = recv_proc.communicate()
-                
+
                 if recv_proc.returncode != 0:
                     raise subprocess.CalledProcessError(
                         recv_proc.returncode, recv_cmd, stderr=recv_stderr
@@ -172,12 +173,12 @@ class ZFSBackend(BackupBackend):
         except (subprocess.CalledProcessError, ValueError):
             return 0
 
-    def check(self, repository: str, **options: Any) -> CheckResult:
+    def check(self, repository: str, **_options: Any) -> CheckResult:
         """Check ZFS dataset integrity (scrub).
 
         Args:
             repository: ZFS pool or dataset to check
-            **options: Check options
+            **_options: Check options (reserved for future use)
 
         Returns:
             CheckResult with check status
@@ -230,7 +231,7 @@ class ZFSBackend(BackupBackend):
         repository: str,
         snapshot_id: str,
         target: str,
-        **options: Any,
+        **_options: Any,
     ) -> RestoreResult:
         """Restore from ZFS snapshot (receive).
 
@@ -263,7 +264,8 @@ class ZFSBackend(BackupBackend):
                 text=True,
             )
 
-            send_proc.stdout.close()
+            if send_proc.stdout is not None:
+                send_proc.stdout.close()
             recv_stdout, recv_stderr = recv_proc.communicate()
 
             duration = time.time() - start_time
@@ -291,12 +293,12 @@ class ZFSBackend(BackupBackend):
                 error_message=str(e),
             )
 
-    def list_snapshots(self, repository: str, **options: Any) -> List[Snapshot]:
+    def list_snapshots(self, repository: str, **_options: Any) -> list[Snapshot]:
         """List ZFS snapshots.
 
         Args:
             repository: ZFS dataset
-            **options: List options
+            **_options: List options (reserved for future use)
 
         Returns:
             List of Snapshot objects
@@ -339,15 +341,15 @@ class ZFSBackend(BackupBackend):
     def forget(
         self,
         repository: str,
-        snapshot_ids: List[str],
-        **options: Any,
+        snapshot_ids: list[str],
+        **_options: Any,
     ) -> None:
         """Delete ZFS snapshots.
 
         Args:
             repository: ZFS dataset
             snapshot_ids: Snapshot names to delete
-            **options: Delete options
+            **_options: Delete options (reserved for future use)
         """
         for snap_name in snapshot_ids:
             snapshot = f"{repository}@{snap_name}"

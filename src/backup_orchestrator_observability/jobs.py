@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Dict, Optional
+from typing import Any
 
 
 class JobStatus(str, Enum):
@@ -23,16 +23,16 @@ class JobState:
 
     job_name: str
     status: JobStatus = JobStatus.IDLE
-    last_run: Optional[datetime] = None
-    last_success: Optional[datetime] = None
-    last_verification: Optional[datetime] = None
+    last_run: datetime | None = None
+    last_success: datetime | None = None
+    last_verification: datetime | None = None
     duration_seconds: float = 0.0
     bytes_transferred: int = 0
     repository_size_bytes: int = 0
-    error_message: Optional[str] = None
+    error_message: str | None = None
     error_count: int = 0
     verification_success: bool = True
-    metadata: Dict[str, str] = field(default_factory=dict)
+    metadata: dict[str, str] = field(default_factory=dict)
 
     def update_success(
         self, duration: float, bytes_transferred: int, repository_size: int = 0
@@ -65,7 +65,7 @@ class JobState:
         self.error_message = error
         self.error_count += 1
 
-    def update_verification(self, success: bool, error: Optional[str] = None) -> None:
+    def update_verification(self, success: bool, error: str | None = None) -> None:
         """Update state after verification.
 
         Args:
@@ -83,7 +83,7 @@ class JobRegistry:
 
     def __init__(self) -> None:
         """Initialize job registry."""
-        self._states: Dict[str, JobState] = {}
+        self._states: dict[str, JobState] = {}
         self._lock = threading.RLock()
 
     def register_job(self, job_name: str) -> None:
@@ -96,7 +96,7 @@ class JobRegistry:
             if job_name not in self._states:
                 self._states[job_name] = JobState(job_name=job_name)
 
-    def get_state(self, job_name: str) -> Optional[JobState]:
+    def get_state(self, job_name: str) -> JobState | None:
         """Get current state for a job.
 
         Args:
@@ -108,7 +108,7 @@ class JobRegistry:
         with self._lock:
             return self._states.get(job_name)
 
-    def update_state(self, job_name: str, **kwargs: any) -> None:
+    def update_state(self, job_name: str, **kwargs: Any) -> None:
         """Update job state with specified fields.
 
         Args:
@@ -132,7 +132,7 @@ class JobRegistry:
         """
         self.update_state(job_name, status=status)
 
-    def get_all_states(self) -> Dict[str, JobState]:
+    def get_all_states(self) -> dict[str, JobState]:
         """Get all job states.
 
         Returns:

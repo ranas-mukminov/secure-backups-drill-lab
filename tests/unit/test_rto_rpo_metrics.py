@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 
 import pytest
-
 from backup_disaster_drill_lab.metrics import (
     DrillMetrics,
     assess_drill_success,

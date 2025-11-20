@@ -1,15 +1,15 @@
 """Borg Backup backend implementation."""
 
+import contextlib
 import json
 import logging
 import subprocess
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backup_orchestrator_observability.backends.base import (
     BackupBackend,
-    
     BackupResult,
     CheckResult,
     RestoreResult,
@@ -32,11 +32,11 @@ class BorgBackend(BackupBackend):
 
     def _run_borg(
         self,
-        args: List[str],
-        repository: Optional[str] = None,
-        extra_env: Optional[Dict[str, str]] = None,
+        args: list[str],
+        repository: str | None = None,
+        extra_env: dict[str, str] | None = None,
         capture_json: bool = False,
-    ) -> subprocess.CompletedProcess:
+    ) -> subprocess.CompletedProcess[str]:
         """Run borg command.
 
         Args:
@@ -85,7 +85,7 @@ class BorgBackend(BackupBackend):
 
     def backup(
         self,
-        sources: List[str],
+        sources: list[str],
         repository: str,
         **options: Any,
     ) -> BackupResult:
@@ -150,7 +150,7 @@ class BorgBackend(BackupBackend):
                 error_message=e.stderr,
             )
 
-    def _parse_create_stats(self, output: str) -> Dict[str, Any]:
+    def _parse_create_stats(self, output: str) -> dict[str, Any]:
         """Parse borg create statistics from output.
 
         Args:
@@ -181,10 +181,8 @@ class BorgBackend(BackupBackend):
             elif "Number of files:" in line:
                 parts = line.split(":")
                 if len(parts) > 1:
-                    try:
+                    with contextlib.suppress(ValueError):
                         stats["number_files"] = int(parts[1].strip())
-                    except ValueError:
-                        pass
 
         return stats
 
@@ -208,12 +206,12 @@ class BorgBackend(BackupBackend):
                 return 0
         return 0
 
-    def check(self, repository: str, **options: Any) -> CheckResult:
+    def check(self, repository: str, **_options: Any) -> CheckResult:
         """Check borg repository integrity.
 
         Args:
             repository: Borg repository path
-            **options: Check options
+            **_options: Check options (reserved for future use)
 
         Returns:
             CheckResult with check status
@@ -257,7 +255,7 @@ class BorgBackend(BackupBackend):
         repository: str,
         snapshot_id: str,
         target: str,
-        **options: Any,
+        **_options: Any,
     ) -> RestoreResult:
         """Restore from borg archive (extract).
 
@@ -284,7 +282,7 @@ class BorgBackend(BackupBackend):
             os.makedirs(target, exist_ok=True)
             os.chdir(target)
 
-            result = self._run_borg(args)
+            self._run_borg(args)
             duration = time.time() - start_time
 
             return RestoreResult(
@@ -302,12 +300,12 @@ class BorgBackend(BackupBackend):
         finally:
             os.chdir(original_cwd)
 
-    def list_snapshots(self, repository: str, **options: Any) -> List[Snapshot]:
+    def list_snapshots(self, repository: str, **_options: Any) -> list[Snapshot]:
         """List borg archives.
 
         Args:
             repository: Borg repository path
-            **options: List options
+            **_options: List options (reserved for future use)
 
         Returns:
             List of Snapshot objects
@@ -346,15 +344,15 @@ class BorgBackend(BackupBackend):
     def forget(
         self,
         repository: str,
-        snapshot_ids: List[str],
-        **options: Any,
+        snapshot_ids: list[str],
+        **_options: Any,
     ) -> None:
         """Delete borg archives.
 
         Args:
             repository: Borg repository path
             snapshot_ids: Archive names to delete
-            **options: Delete options
+            **_options: Delete options (reserved for future use)
         """
         for archive_name in snapshot_ids:
             args = ["delete", f"{repository}::{archive_name}"]
@@ -392,7 +390,8 @@ class BorgBackend(BackupBackend):
             # Borg info provides repository stats
             cache = info.get("cache", {})
             stats = cache.get("stats", {})
-            return stats.get("unique_csize", 0)
+            unique_size = stats.get("unique_csize", 0)
+            return int(unique_size) if unique_size is not None else 0
         except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
             logger.warning("Failed to get repository size, returning 0")
             return 0

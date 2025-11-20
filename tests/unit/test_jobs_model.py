@@ -1,8 +1,5 @@
 """Unit tests for job state management."""
 
-from datetime import datetime
-
-import pytest
 
 from backup_orchestrator_observability.jobs import JobRegistry, JobState, JobStatus
 
@@ -73,7 +70,7 @@ def test_registry_thread_safety():
     registry.register_job("concurrent-job")
 
     def update_state():
-        for i in range(100):
+        for _i in range(100):
             registry.update_state("concurrent-job", status=JobStatus.RUNNING)
             registry.update_state("concurrent-job", status=JobStatus.SUCCESS)
 

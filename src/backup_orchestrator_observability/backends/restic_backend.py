@@ -4,8 +4,7 @@ import json
 import logging
 import subprocess
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from backup_orchestrator_observability.backends.base import (
     BackupBackend,
@@ -31,11 +30,11 @@ class ResticBackend(BackupBackend):
 
     def _run_restic(
         self,
-        args: List[str],
+        args: list[str],
         repository: str,
-        extra_env: Optional[Dict[str, str]] = None,
+        extra_env: dict[str, str] | None = None,
         capture_json: bool = False,
-    ) -> subprocess.CompletedProcess:
+    ) -> subprocess.CompletedProcess[str]:
         """Run restic command.
 
         Args:
@@ -76,7 +75,7 @@ class ResticBackend(BackupBackend):
 
     def backup(
         self,
-        sources: List[str],
+        sources: list[str],
         repository: str,
         **options: Any,
     ) -> BackupResult:
@@ -95,16 +94,16 @@ class ResticBackend(BackupBackend):
         start_time = time.time()
 
         args = ["backup"] + sources
-        
+
         # Add optional parameters
         if "tags" in options:
             for tag in options["tags"]:
                 args.extend(["--tag", tag])
-        
+
         if "exclude" in options:
             for pattern in options["exclude"]:
                 args.extend(["--exclude", pattern])
-        
+
         if "exclude_file" in options:
             args.extend(["--exclude-file", options["exclude_file"]])
 
@@ -230,7 +229,7 @@ class ResticBackend(BackupBackend):
                 args.extend(["--include", pattern])
 
         try:
-            result = self._run_restic(args, repository)
+            self._run_restic(args, repository)
             duration = time.time() - start_time
 
             # Restic doesn't provide detailed restore stats in stdout
@@ -253,7 +252,7 @@ class ResticBackend(BackupBackend):
                 error_message=e.stderr,
             )
 
-    def list_snapshots(self, repository: str, **options: Any) -> List[Snapshot]:
+    def list_snapshots(self, repository: str, **options: Any) -> list[Snapshot]:
         """List restic snapshots.
 
         Args:
@@ -281,9 +280,7 @@ class ResticBackend(BackupBackend):
                 snapshots.append(
                     Snapshot(
                         id=snap["short_id"],
-                        timestamp=datetime.fromisoformat(
-                            snap["time"].replace("Z", "+00:00")
-                        ),
+                        timestamp=datetime.fromisoformat(snap["time"].replace("Z", "+00:00")),
                         hostname=snap.get("hostname", ""),
                         paths=snap.get("paths", []),
                         tags=snap.get("tags", []),
@@ -299,7 +296,7 @@ class ResticBackend(BackupBackend):
     def forget(
         self,
         repository: str,
-        snapshot_ids: List[str],
+        snapshot_ids: list[str],
         **options: Any,
     ) -> None:
         """Forget restic snapshots.
@@ -316,12 +313,12 @@ class ResticBackend(BackupBackend):
 
         self._run_restic(args, repository)
 
-    def prune(self, repository: str, **options: Any) -> None:
+    def prune(self, repository: str, **_options: Any) -> None:
         """Prune restic repository.
 
         Args:
             repository: Restic repository URL
-            **options: Prune options
+            **_options: Prune options (reserved for future use)
         """
         args = ["prune"]
         self._run_restic(args, repository)
@@ -338,7 +335,8 @@ class ResticBackend(BackupBackend):
         try:
             result = self._run_restic(["stats"], repository, capture_json=True)
             stats = json.loads(result.stdout)
-            return stats.get("total_size", 0)
+            total_size = stats.get("total_size", 0)
+            return int(total_size) if total_size is not None else 0
         except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
             logger.warning("Failed to get repository size, returning 0")
             return 0
@@ -346,12 +344,12 @@ class ResticBackend(BackupBackend):
     def apply_retention_policy(
         self,
         repository: str,
-        keep_last: Optional[int] = None,
-        keep_hourly: Optional[int] = None,
-        keep_daily: Optional[int] = None,
-        keep_weekly: Optional[int] = None,
-        keep_monthly: Optional[int] = None,
-        keep_yearly: Optional[int] = None,
+        keep_last: int | None = None,
+        keep_hourly: int | None = None,
+        keep_daily: int | None = None,
+        keep_weekly: int | None = None,
+        keep_monthly: int | None = None,
+        keep_yearly: int | None = None,
         prune: bool = True,
     ) -> None:
         """Apply retention policy using restic forget.

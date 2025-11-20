@@ -3,14 +3,12 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich.console import Console
 from rich.table import Table
 
 from backup_orchestrator_observability.config import load_config
-from backup_orchestrator_observability.jobs import JobRegistry
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -41,7 +39,7 @@ def main(log_level: str) -> None:
 )
 def run(config: Path) -> None:
     """Start the backup orchestrator daemon."""
-    console.print(f"[bold green]Starting backup orchestrator[/bold green]")
+    console.print("[bold green]Starting backup orchestrator[/bold green]")
     console.print(f"Config: {config}")
 
     try:
@@ -49,9 +47,7 @@ def run(config: Path) -> None:
         console.print(f"Loaded {len(cfg.jobs)} job(s)")
 
         # TODO: Implement scheduler initialization and main loop
-        console.print(
-            "[yellow]Scheduler implementation pending - see scheduler.py[/yellow]"
-        )
+        console.print("[yellow]Scheduler implementation pending - see scheduler.py[/yellow]")
         console.print("Press Ctrl+C to stop")
 
         # Placeholder - actual implementation would start APScheduler here
@@ -94,9 +90,7 @@ def exec(job_name: str, config: Path) -> None:
         console.print(f"Repository: {job_config.repository}")
 
         # TODO: Implement actual job execution
-        console.print(
-            "[yellow]Job execution implementation pending - see scheduler.py[/yellow]"
-        )
+        console.print("[yellow]Job execution implementation pending - see scheduler.py[/yellow]")
 
     except Exception as e:
         console.print(f"[bold red]Error: {e}[/bold red]")
@@ -125,9 +119,7 @@ def verify(job_name: str, config: Path) -> None:
             sys.exit(1)
 
         # TODO: Implement verification
-        console.print(
-            "[yellow]Verification implementation pending - see verify.py[/yellow]"
-        )
+        console.print("[yellow]Verification implementation pending - see verify.py[/yellow]")
 
     except Exception as e:
         console.print(f"[bold red]Error: {e}[/bold red]")
