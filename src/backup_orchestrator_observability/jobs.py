@@ -2,7 +2,7 @@
 
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Dict, Optional
 
@@ -44,7 +44,7 @@ class JobState:
             bytes_transferred: Bytes transferred during backup
             repository_size: Total repository size in bytes
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         self.status = JobStatus.SUCCESS
         self.last_run = now
         self.last_success = now
@@ -61,7 +61,7 @@ class JobState:
             error: Error message describing the failure
         """
         self.status = JobStatus.FAILED
-        self.last_run = datetime.utcnow()
+        self.last_run = datetime.now(UTC)
         self.error_message = error
         self.error_count += 1
 
@@ -72,7 +72,7 @@ class JobState:
             success: Whether verification succeeded
             error: Optional error message if verification failed
         """
-        self.last_verification = datetime.utcnow()
+        self.last_verification = datetime.now(UTC)
         self.verification_success = success
         if not success and error:
             self.error_message = error

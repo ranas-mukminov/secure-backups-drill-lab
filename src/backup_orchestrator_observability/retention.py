@@ -1,7 +1,9 @@
-"""Retention policy calculation and enforcement."""
+"""Retention policy logic for backup snapshots."""
 
-from datetime import datetime, timedelta
-from typing import Dict, List
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import List, Optional
 
 from backup_orchestrator_observability.backends.base import Snapshot
 from backup_orchestrator_observability.config import RetentionPolicy
@@ -37,7 +39,7 @@ class RetentionCalculator:
                 keep_ids.add(snap.id)
 
         # Bucket-based retention (hourly, daily, weekly, monthly, yearly)
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         if policy.keep_hourly:
             keep_ids.update(
