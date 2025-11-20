@@ -1,0 +1,25 @@
+# Example: ZFS Send to Offsite Configuration
+
+jobs:
+  - name: zfs-tank-data
+    backend: zfs
+    sources:
+      - tank/data
+    repository: offsite-pool/backups/tank-data  # Remote ZFS pool
+    schedule: "0 * * * *"  # Every hour
+    retention:
+      keep_hourly: 48
+      keep_daily: 30
+    backend_options:
+      snapshot_name: "auto-{now:%Y%m%d-%H%M}"
+      incremental: true
+    verification_schedule: "0 5 * * 2"  # Weekly on Tuesday at 5 AM
+    rpo_hours: 1
+    enabled: true
+
+metrics:
+  enabled: true
+  port: 9092
+
+log_level: INFO
+scheduler_timezone: UTC

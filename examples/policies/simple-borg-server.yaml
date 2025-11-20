@@ -1,0 +1,28 @@
+# Example: Simple Borg Backup Configuration for Server Data
+
+jobs:
+  - name: server-data
+    backend: borg
+    sources:
+      - /var/www
+      - /etc
+      - /var/lib/postgresql
+    repository: /mnt/backup/borg/server
+    schedule: "0 */6 * * *"  # Every 6 hours
+    retention:
+      keep_hourly: 24
+      keep_daily: 7
+      keep_weekly: 4
+    backend_options:
+      compression: lz4
+      archive_name: "server-{now:%Y%m%d-%H%M%S}"
+    verification_schedule: "0 4 * * 1"  # Weekly on Monday at 4 AM
+    rpo_hours: 6
+    enabled: true
+
+metrics:
+  enabled: true
+  port: 9091
+
+log_level: INFO
+scheduler_timezone: UTC

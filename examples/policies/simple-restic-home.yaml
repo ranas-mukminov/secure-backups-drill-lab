@@ -1,0 +1,33 @@
+# Example: Simple Restic Backup Configuration for Home Directory
+
+jobs:
+  - name: home-documents
+    backend: restic
+    sources:
+      - /home/user/Documents
+      - /home/user/Pictures
+    repository: s3:https://s3.amazonaws.com/my-backup-bucket/home
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention:
+      keep_daily: 7
+      keep_weekly: 4
+      keep_monthly: 6
+    backend_options:
+      tags:
+        - home
+        - documents
+      exclude:
+        - "*.tmp"
+        - "*.cache"
+        - ".git"
+    verification_schedule: "0 3 * * 0"  # Weekly on Sunday at 3 AM
+    rpo_hours: 24
+    enabled: true
+
+metrics:
+  enabled: true
+  port: 9090
+  textfile_path: /var/lib/node_exporter/textfile_collector
+
+log_level: INFO
+scheduler_timezone: UTC
