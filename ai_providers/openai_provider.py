@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Optional
 
 from ai_providers.base import AIProvider
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 class OpenAIProvider(AIProvider):
     """OpenAI API provider for text generation."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini") -> None:
+    def __init__(self, api_key: str | None = None, model: str = "gpt-4o-mini") -> None:
         """Initialize OpenAI provider.
 
         Args:
@@ -30,10 +29,10 @@ class OpenAIProvider(AIProvider):
                 from openai import OpenAI
 
                 self._client = OpenAI(api_key=self.api_key)
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "openai package not installed. Install with: pip install openai"
-                )
+                ) from e
         return self._client
 
     def generate_text(
@@ -41,7 +40,7 @@ class OpenAIProvider(AIProvider):
         prompt: str,
         max_tokens: int = 1000,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> str:
         """Generate text using OpenAI API.
 

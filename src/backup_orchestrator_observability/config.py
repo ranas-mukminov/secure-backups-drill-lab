@@ -1,9 +1,8 @@
 """Configuration models and loaders for backup orchestrator."""
 
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -20,12 +19,12 @@ class BackendType(str, Enum):
 class RetentionPolicy(BaseModel):
     """Retention policy for backups."""
 
-    keep_last: Optional[int] = Field(None, description="Keep last N backups")
-    keep_hourly: Optional[int] = Field(None, description="Keep N hourly backups")
-    keep_daily: Optional[int] = Field(None, description="Keep N daily backups")
-    keep_weekly: Optional[int] = Field(None, description="Keep N weekly backups")
-    keep_monthly: Optional[int] = Field(None, description="Keep N monthly backups")
-    keep_yearly: Optional[int] = Field(None, description="Keep N yearly backups")
+    keep_last: int | None = Field(None, description="Keep last N backups")
+    keep_hourly: int | None = Field(None, description="Keep N hourly backups")
+    keep_daily: int | None = Field(None, description="Keep N daily backups")
+    keep_weekly: int | None = Field(None, description="Keep N weekly backups")
+    keep_monthly: int | None = Field(None, description="Keep N monthly backups")
+    keep_yearly: int | None = Field(None, description="Keep N yearly backups")
 
     @field_validator("*", mode="before")
     @classmethod
@@ -41,16 +40,16 @@ class BackupJobConfig(BaseModel):
 
     name: str = Field(..., description="Unique job name")
     backend: BackendType = Field(..., description="Backup backend type")
-    sources: List[str] = Field(..., description="Source paths to backup")
+    sources: list[str] = Field(..., description="Source paths to backup")
     repository: str = Field(..., description="Backup repository location")
     schedule: str = Field(..., description="Cron schedule expression")
     retention: RetentionPolicy = Field(
-        default_factory=RetentionPolicy, description="Retention policy"
+        default_factory=RetentionPolicy.model_construct, description="Retention policy"
     )
-    backend_options: Dict[str, Any] = Field(
+    backend_options: dict[str, Any] = Field(
         default_factory=dict, description="Backend-specific options"
     )
-    verification_schedule: Optional[str] = Field(
+    verification_schedule: str | None = Field(
         None, description="Verification cron schedule (optional)"
     )
     rpo_hours: int = Field(24, description="Recovery Point Objective in hours")
@@ -58,7 +57,7 @@ class BackupJobConfig(BaseModel):
 
     @field_validator("sources")
     @classmethod
-    def validate_sources(cls, v: List[str]) -> List[str]:
+    def validate_sources(cls, v: list[str]) -> list[str]:
         """Validate that sources list is not empty."""
         if not v:
             raise ValueError("At least one source path must be specified")
@@ -66,15 +65,13 @@ class BackupJobConfig(BaseModel):
 
     @field_validator("schedule", "verification_schedule")
     @classmethod
-    def validate_cron(cls, v: Optional[str]) -> Optional[str]:
+    def validate_cron(cls, v: str | None) -> str | None:
         """Basic cron expression validation."""
         if v is None:
             return v
         parts = v.split()
         if len(parts) not in (5, 6):  # standard cron or with seconds
-            raise ValueError(
-                f"Invalid cron expression '{v}': must have 5 or 6 parts"
-            )
+            raise ValueError(f"Invalid cron expression '{v}': must have 5 or 6 parts")
         return v
 
 
@@ -83,24 +80,22 @@ class MetricsConfig(BaseModel):
 
     enabled: bool = Field(True, description="Enable metrics export")
     port: int = Field(9090, description="HTTP metrics port")
-    textfile_path: Optional[str] = Field(
-        None, description="Path for textfile collector"
-    )
+    textfile_path: str | None = Field(None, description="Path for textfile collector")
 
 
 class OrchestratorConfig(BaseModel):
     """Main orchestrator configuration."""
 
-    jobs: List[BackupJobConfig] = Field(..., description="List of backup jobs")
+    jobs: list[BackupJobConfig] = Field(..., description="List of backup jobs")
     metrics: MetricsConfig = Field(
-        default_factory=MetricsConfig, description="Metrics configuration"
+        default_factory=MetricsConfig.model_construct, description="Metrics configuration"
     )
     log_level: str = Field("INFO", description="Logging level")
     scheduler_timezone: str = Field("UTC", description="Scheduler timezone")
 
     @field_validator("jobs")
     @classmethod
-    def validate_unique_names(cls, v: List[BackupJobConfig]) -> List[BackupJobConfig]:
+    def validate_unique_names(cls, v: list[BackupJobConfig]) -> list[BackupJobConfig]:
         """Ensure all job names are unique."""
         names = [job.name for job in v]
         if len(names) != len(set(names)):

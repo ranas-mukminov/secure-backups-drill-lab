@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -17,9 +17,9 @@ class BackupResult:
     files_new: int = 0
     files_changed: int = 0
     files_unmodified: int = 0
-    snapshot_id: Optional[str] = None
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = None
+    snapshot_id: str | None = None
+    error_message: str | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         """Initialize metadata dict if None."""
@@ -32,10 +32,10 @@ class CheckResult:
     """Result of a repository check operation."""
 
     success: bool
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
     duration_seconds: float
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -46,7 +46,7 @@ class RestoreResult:
     duration_seconds: float
     bytes_restored: int = 0
     files_restored: int = 0
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -56,8 +56,8 @@ class Snapshot:
     id: str
     timestamp: datetime
     hostname: str
-    paths: List[str]
-    tags: List[str] = None
+    paths: list[str]
+    tags: list[str] | None = None
 
     def __post_init__(self) -> None:
         """Initialize tags list if None."""
@@ -71,7 +71,7 @@ class BackupBackend(ABC):
     @abstractmethod
     def backup(
         self,
-        sources: List[str],
+        sources: list[str],
         repository: str,
         **options: Any,
     ) -> BackupResult:
@@ -131,7 +131,7 @@ class BackupBackend(ABC):
         pass
 
     @abstractmethod
-    def list_snapshots(self, repository: str, **options: Any) -> List[Snapshot]:
+    def list_snapshots(self, repository: str, **options: Any) -> list[Snapshot]:
         """List available snapshots.
 
         Args:
@@ -150,7 +150,7 @@ class BackupBackend(ABC):
     def forget(
         self,
         repository: str,
-        snapshot_ids: List[str],
+        snapshot_ids: list[str],
         **options: Any,
     ) -> None:
         """Forget (delete) specific snapshots.

@@ -1,9 +1,7 @@
 """Retention policy logic for backup snapshots."""
 
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
-from enum import Enum
-from typing import List, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from backup_orchestrator_observability.backends.base import Snapshot
 from backup_orchestrator_observability.config import RetentionPolicy
@@ -13,9 +11,7 @@ class RetentionCalculator:
     """Calculate which snapshots to keep based on retention policy."""
 
     @staticmethod
-    def get_snapshots_to_keep(
-        snapshots: List[Snapshot], policy: RetentionPolicy
-    ) -> List[Snapshot]:
+    def get_snapshots_to_keep(snapshots: list[Snapshot], policy: RetentionPolicy) -> list[Snapshot]:
         """Determine which snapshots to keep based on retention policy.
 
         Args:
@@ -42,19 +38,13 @@ class RetentionCalculator:
         now = datetime.now(UTC)
 
         if policy.keep_hourly:
-            keep_ids.update(
-                RetentionCalculator._get_hourly(sorted_snaps, policy.keep_hourly, now)
-            )
+            keep_ids.update(RetentionCalculator._get_hourly(sorted_snaps, policy.keep_hourly, now))
 
         if policy.keep_daily:
-            keep_ids.update(
-                RetentionCalculator._get_daily(sorted_snaps, policy.keep_daily, now)
-            )
+            keep_ids.update(RetentionCalculator._get_daily(sorted_snaps, policy.keep_daily, now))
 
         if policy.keep_weekly:
-            keep_ids.update(
-                RetentionCalculator._get_weekly(sorted_snaps, policy.keep_weekly, now)
-            )
+            keep_ids.update(RetentionCalculator._get_weekly(sorted_snaps, policy.keep_weekly, now))
 
         if policy.keep_monthly:
             keep_ids.update(
@@ -62,15 +52,13 @@ class RetentionCalculator:
             )
 
         if policy.keep_yearly:
-            keep_ids.update(
-                RetentionCalculator._get_yearly(sorted_snaps, policy.keep_yearly, now)
-            )
+            keep_ids.update(RetentionCalculator._get_yearly(sorted_snaps, policy.keep_yearly, now))
 
         # Return snapshots that are in the keep set
         return [snap for snap in snapshots if snap.id in keep_ids]
 
     @staticmethod
-    def _get_hourly(snapshots: List[Snapshot], count: int, now: datetime) -> set:
+    def _get_hourly(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
         """Get IDs of snapshots to keep for hourly retention.
 
         Args:
@@ -86,28 +74,28 @@ class RetentionCalculator:
         )
 
     @staticmethod
-    def _get_daily(snapshots: List[Snapshot], count: int, now: datetime) -> set:
+    def _get_daily(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
         """Get IDs of snapshots to keep for daily retention."""
         return RetentionCalculator._get_bucketed(
             snapshots, count, now, lambda dt: dt.strftime("%Y%m%d")
         )
 
     @staticmethod
-    def _get_weekly(snapshots: List[Snapshot], count: int, now: datetime) -> set:
+    def _get_weekly(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
         """Get IDs of snapshots to keep for weekly retention."""
         return RetentionCalculator._get_bucketed(
             snapshots, count, now, lambda dt: dt.strftime("%Y%W")
         )
 
     @staticmethod
-    def _get_monthly(snapshots: List[Snapshot], count: int, now: datetime) -> set:
+    def _get_monthly(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
         """Get IDs of snapshots to keep for monthly retention."""
         return RetentionCalculator._get_bucketed(
             snapshots, count, now, lambda dt: dt.strftime("%Y%m")
         )
 
     @staticmethod
-    def _get_yearly(snapshots: List[Snapshot], count: int, now: datetime) -> set:
+    def _get_yearly(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
         """Get IDs of snapshots to keep for yearly retention."""
         return RetentionCalculator._get_bucketed(
             snapshots, count, now, lambda dt: dt.strftime("%Y")
@@ -115,20 +103,23 @@ class RetentionCalculator:
 
     @staticmethod
     def _get_bucketed(
-        snapshots: List[Snapshot], count: int, now: datetime, bucket_fn
-    ) -> set:
+        snapshots: list[Snapshot],
+        count: int,
+        _now: datetime,
+        bucket_fn: Callable[[datetime], str],
+    ) -> set[str]:
         """Generic bucketed retention.
 
         Args:
             snapshots: Sorted snapshots
             count: Number of buckets to keep
-            now: Current time
+            _now: Current time (unused but kept for API consistency)
             bucket_fn: Function to convert datetime to bucket key
 
         Returns:
             Set of snapshot IDs to keep
         """
-        buckets: Dict[str, Snapshot] = {}
+        buckets: dict[str, Snapshot] = {}
 
         for snap in snapshots:
             bucket_key = bucket_fn(snap.timestamp)
@@ -144,9 +135,7 @@ class RetentionCalculator:
         return {snap.id for snap in kept_snapshots}
 
 
-def get_snapshots_to_delete(
-    snapshots: List[Snapshot], policy: RetentionPolicy
-) -> List[Snapshot]:
+def get_snapshots_to_delete(snapshots: list[Snapshot], policy: RetentionPolicy) -> list[Snapshot]:
     """Get list of snapshots that should be deleted based on retention policy.
 
     Args:
