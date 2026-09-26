@@ -1,6 +1,5 @@
 """Mock AI provider for testing."""
 
-
 from ai_providers.base import AIProvider
 
 
