@@ -39,13 +39,13 @@ psutil = "^5.9.6"
 openai = {version = "^1.6.1", optional = true}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
+pytest = ">=7.4.3,<10.0.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
 pytest-asyncio = "^0.21.1"
 ruff = "^0.1.8"
 mypy = "^1.7.1"
-black = "^24.3.0"
+black = ">=24.3,<27.0"
 bandit = "^1.7.5"
 safety = "^2.3.5"
 freezegun = "^1.4.0"
