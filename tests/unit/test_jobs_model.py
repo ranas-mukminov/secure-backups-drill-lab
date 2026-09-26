@@ -1,6 +1,5 @@
 """Unit tests for job state management."""
 
-
 from backup_orchestrator_observability.jobs import JobRegistry, JobState, JobStatus
 
 
