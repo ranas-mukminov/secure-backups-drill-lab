@@ -24,6 +24,21 @@ class RetentionCalculator:
         if not snapshots:
             return []
 
+        # No keep rule configured: keep everything. An empty policy must never
+        # translate into "delete every snapshot" (restic forget keeps all
+        # snapshots when no policy is given; borg prune refuses to run).
+        if not any(
+            (
+                policy.keep_last,
+                policy.keep_hourly,
+                policy.keep_daily,
+                policy.keep_weekly,
+                policy.keep_monthly,
+                policy.keep_yearly,
+            )
+        ):
+            return list(snapshots)
+
         # Sort snapshots by timestamp (newest first)
         sorted_snaps = sorted(snapshots, key=lambda s: s.timestamp, reverse=True)
 
@@ -82,9 +97,13 @@ class RetentionCalculator:
 
     @staticmethod
     def _get_weekly(snapshots: list[Snapshot], count: int, now: datetime) -> set[str]:
-        """Get IDs of snapshots to keep for weekly retention."""
+        """Get IDs of snapshots to keep for weekly retention.
+
+        Uses ISO 8601 year/week (%G-%V), like restic and borg, so the week that
+        spans New Year is one bucket instead of being split in two.
+        """
         return RetentionCalculator._get_bucketed(
-            snapshots, count, now, lambda dt: dt.strftime("%Y%W")
+            snapshots, count, now, lambda dt: dt.strftime("%G%V")
         )
 
     @staticmethod
