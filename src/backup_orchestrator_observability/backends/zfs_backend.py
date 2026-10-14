@@ -96,17 +96,26 @@ class ZFSBackend(BackupBackend):
 
             # Determine target
             if repository.startswith("/"):
-                # Send to file
-                send_args.extend([">", repository])
-                # Use shell for redirection
-                send_cmd = f"zfs {' '.join(send_args)}"
-                subprocess.run(
-                    send_cmd,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                )
+                # Send to file without shell=True (dataset/snapshot/path
+                # may contain metacharacters if taken from config).
+                with open(repository, "wb") as out_f:
+                    send_proc = subprocess.Popen(
+                        ["zfs"] + send_args,
+                        stdout=out_f,
+                        stderr=subprocess.PIPE,
+                    )
+                    _, send_stderr = send_proc.communicate()
+                    if send_proc.returncode != 0:
+                        err = (
+                            send_stderr.decode("utf-8", errors="replace")
+                            if isinstance(send_stderr, (bytes, bytearray))
+                            else (send_stderr or "")
+                        )
+                        raise subprocess.CalledProcessError(
+                            send_proc.returncode,
+                            ["zfs"] + send_args,
+                            stderr=err,
+                        )
             else:
                 # Send to remote dataset (via SSH or direct)
                 # For now, we'll assume direct local receive
