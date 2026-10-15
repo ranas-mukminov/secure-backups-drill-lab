@@ -108,7 +108,7 @@ class ZFSBackend(BackupBackend):
                     if send_proc.returncode != 0:
                         err = (
                             send_stderr.decode("utf-8", errors="replace")
-                            if isinstance(send_stderr, (bytes, bytearray))
+                            if isinstance(send_stderr, bytes | bytearray)
                             else (send_stderr or "")
                         )
                         raise subprocess.CalledProcessError(

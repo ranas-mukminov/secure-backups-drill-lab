@@ -18,7 +18,7 @@ def test_backup_to_file_uses_popen_without_shell(tmp_path):
     with (
         patch.object(backend, "_run_zfs") as run_zfs,
         patch("backup_orchestrator_observability.backends.zfs_backend.subprocess.Popen") as popen,
-        patch("builtins.open", mock_open()) as m_open,
+        patch("builtins.open", mock_open()),
     ):
         run_zfs.return_value = MagicMock()
         popen.return_value = mock_proc
